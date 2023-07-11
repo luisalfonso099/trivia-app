@@ -2,14 +2,38 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import eventBus from '../eventBus';
+import {dataQuery} from '../store/dataQuery.js';
 
+
+const store = dataQuery()
 const count = ref(0);
 let alertValidate = ref(false);
 let errorMesagges = ref('');
 let categories = ref([]);
 let dataDECategorias = ref([]);
-const difficulty = ['Any Difficulty', 'Easy','Medium','Hard'];
-const types = ['Any Type','Multiple Choice','True / False'];
+const difficulty = [
+  {
+    name :'Any Difficulty',
+    value : ''
+  },
+  {
+    name: 'Easy',
+    value : 'easy'
+  },
+  {
+    name: 'Medium',
+    value: 'medium'
+  },
+  {
+    name:'Hard',
+    value:'hard'
+  }];
+
+
+const types = [
+  {name:'Any Type', value : ''},
+  {name :'Multiple Choice', value : 'multiple'},
+  {name:'True / False', value : 'boolean'}];
 
 const numberQuestions = ref(10);
 let categorySelect = ref('');
@@ -47,31 +71,30 @@ const startGame = () => {
     errorMesagges.value = 'You are choosing categories that do not exist';
     return;
   }
-  if (regexDificult.test(levelDificult.value)) {
+  if (regexDificult.test(levelDificult.value.name)) {
     alertValidate.value = true;
     errorMesagges.value = 'That’s not a valid difficulty';
     return;
   }
 
-  if (regexLevel.test(typeQuiz.value)) {
+  if (regexLevel.test(typeQuiz.value.name)) {
     alertValidate.value = true;
     errorMesagges.value = 'That’s not a valid quiz';
     return;
   }
 
-  eventBus.emit('startGame', {
-    numberQuestions : numberQuestions.value,
-    categorySelect : categorySelect.value.name,
-    levelDificult: levelDificult.value,
-    typeQuiz: typeQuiz.value,
-  });
+  store.setearDataQuery({
+    number : numberQuestions.value,
+    category : categorySelect.value.id,
+    level: levelDificult.value.value,
+    type: typeQuiz.value.value,
+  })
   router.push('/playing');
-  console.log('typeQuiz//', typeQuiz.value);
+
 };
 
 onMounted(async () => {
   await loadCategories();
-  console.log(categorySelect);
 });
 </script>
 
@@ -95,8 +118,8 @@ onMounted(async () => {
           <label class="label">
             <span class="label-text">Categories</span>
           </label>
-          <select class="select select-bordered w-full max-w-xs" v-model="categorySelect.name">
-            <option v-for="category in categories" :key="category.id">{{category.name}}</option>
+          <select class="select select-bordered w-full max-w-xs" v-model="categorySelect">
+            <option v-for="category in categories" :key="category.id" :value="category">{{category.name}}</option>
           </select>
         </div>
         <div class="form-control">
@@ -104,7 +127,7 @@ onMounted(async () => {
             <span class="label-text">Select Difficulty:</span>
           </label>
           <select class="select select-bordered w-full max-w-xs" v-model="levelDificult">
-            <option v-for="level in difficulty">{{level}}</option>
+            <option v-for="level in difficulty" :value="level">{{level.name}}</option>
           </select>
         </div>
         <div class="form-control">
@@ -112,7 +135,7 @@ onMounted(async () => {
             <span class="label-text">Select Type:</span>
           </label>
           <select class="select select-bordered w-full max-w-xs" v-model="typeQuiz">
-            <option v-for="type in types" >{{type}}</option>
+            <option v-for="type in types" :value="type">{{type.name}}</option>
           </select>
         </div>
         <div class="alert alert-warning z-50" v-if="alertValidate">
